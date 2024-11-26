@@ -3,25 +3,77 @@ import { startStandaloneServer } from '@apollo/server/standalone';
 
 // GraphQL 스키마 정의
 
+let tweets = [
+    {
+        id: "1",
+        text: "This is the first query",
+        author: {
+            id: "1",
+            name: "changwan"
+        },
+    },
+    {
+        id: "2",
+        text: "This is the second query",
+        author: {
+            id: "2",
+            name: "changwan2"
+        }
+    }
+]
 
 const typeDefs = `
+    type User {
+        id: ID,
+        name: String,
+    }
     type Tweet {
-        id:ID,
-        text: String
+        id: ID,
+        text: String,
+        author: User
     }
     type Query {
-       getTweet: Tweet
+       allTweets: [Tweet],
+       tweet(id: ID!): Tweet,
+       ping: String
+    }
+    type Mutation {
+        postTweet(userId: ID!, text: String!): Tweet,
+        deleteTweet(userId: ID!): Boolean
     }
 `;
 
 const resolvers = {
     Query: {
-        getTweet: () => ({
-            id : 1,
-            text: "This is a sample tweet",
-        })
+        allTweets: () => tweets,
+        tweet(root, {id}){
+            console.log(id);
+            return tweets.find(tweet => tweet.id === id);
+        },
+        ping(){
+            return "pong";
+        }
+    },
+    Mutation:{
+        postTweet(root, {userId, text}){
+            const newTweet = {
+                id: tweets.length + 1,
+                text
+            }
+            tweets.push(newTweet);
+            return newTweet;
+        },
+        deleteTweet(_, { Id }) {
+            const tweet = tweets.find((tweet) => tweet.id === Id);
+            if (!tweet) return false;
+            tweets = tweets.filter((tweet) => tweet.id !== Id);
+            return true;
+        },
     }
 };
+
+// type 변수명과 resolve 변수명 통일
+
 const server = new ApolloServer({
     typeDefs,
     resolvers
@@ -33,8 +85,3 @@ const { url } = await startStandaloneServer(server, {
 });
 
 console.log(`🚀 Server ready at: ${url}`);
-
-// ✍️ 주요 변경 사항
-// apollo-server 대신 @apollo/server 패키지를 사용합니다
-// ApolloServer 클래스를 사용하여 서버 인스턴스를 생성합니다.
-// startStandaloneServer 함수를 사용하여 서버를 시작합니다.
