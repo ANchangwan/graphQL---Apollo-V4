@@ -44,12 +44,13 @@ const typeDefs = `
     }
     type Query {
        allTweets: [Tweet],
-       tweet(id: ID!): Tweet,
+       tweet(userId: ID!): Tweet,
        allUsers: [User],
        ping: String
     }
     type Mutation {
         postTweet(userId: ID!, text: String!): Tweet,
+        updateTweet(userId: ID!, text: String!): Tweet,
         deleteTweet(userId: ID!): Boolean
     }
 `;
@@ -57,8 +58,9 @@ const typeDefs = `
 const resolvers = {
     Query: {
         allTweets: () => tweets,
-        tweet(root, {id}){
-            return tweets.find(tweet => tweet.id === id);
+        tweet(root, {userId}) {
+            console.log(userId);
+            return tweets.find(tweet => tweet.id === userId);
         },
         ping(){
             return "pong";
@@ -77,6 +79,18 @@ const resolvers = {
             tweets.push(newTweet);
             return newTweet;
         },
+        updateTweet(_,{userId, text}){
+            tweets = tweets.filter(tweet => tweet.id !== userId);
+
+            const newTweet = {
+                id: userId,
+                text,
+                userId
+            };
+            tweets.push(newTweet);
+            tweets.sort((a,b) => a.id - b.id);
+            return tweets;
+        },
         // 변수명 통일 typedef === resolvers
         deleteTweet(_, { userId }) {
             const tweet = tweets.find((tweet) => tweet.id === userId);
@@ -87,7 +101,6 @@ const resolvers = {
     },
     Tweet: {
         author({userId} ) {
-            console.log(userId)
             return users.find((user) => user.id === userId);
         },
     },
